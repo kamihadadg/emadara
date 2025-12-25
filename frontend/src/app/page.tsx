@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Survey, SurveyResponse } from '@/types/survey';
 import { getActiveSurveys, getSurveyById, submitSurveyResponse, getCommentCount } from '@/lib/api';
 import SurveyForm from '@/components/SurveyForm';
@@ -138,6 +139,12 @@ export default function Home() {
             </p>
           </div>
         </div>
+        <Link
+          href="/admin"
+          className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition-colors text-sm font-medium"
+        >
+          پنل مدیریت
+        </Link>
       </header>
 
       {/* ===== Main Layout ===== */}
