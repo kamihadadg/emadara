@@ -39,3 +39,46 @@ export async function getSurveyResults(id: string): Promise<SurveyResults> {
   }
   return response.json();
 }
+
+export interface CreateCommentDto {
+  name?: string;
+  message: string;
+}
+
+export interface CommentItem {
+  id: string;
+  name?: string;
+  message: string;
+  createdAt: string;
+}
+
+export async function getComments(limit = 20): Promise<CommentItem[]> {
+  const response = await fetch(`${API_BASE_URL}/comments?limit=${limit}`);
+  if (!response.ok) throw new Error('Failed to fetch comments');
+  return response.json();
+}
+
+export async function createComment(dto: CreateCommentDto): Promise<CommentItem> {
+  const res = await fetch(`${API_BASE_URL}/comments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(dto),
+  });
+  if (!res.ok) throw new Error('Failed to create comment');
+  return res.json();
+}
+
+export async function getAdminComments(secret: string, limit = 100): Promise<CommentItem[]> {
+  const res = await fetch(`${API_BASE_URL}/comments/admin?limit=${limit}`, {
+    headers: { 'x-admin-secret': secret },
+  });
+  if (!res.ok) throw new Error('Failed to fetch admin comments');
+  return res.json();
+}
+
+export async function getCommentCount(): Promise<number> {
+  const res = await fetch(`${API_BASE_URL}/comments/count`);
+  if (!res.ok) throw new Error('Failed to fetch comment count');
+  const json = await res.json();
+  return json.count ?? 0;
+}

@@ -1,47 +1,45 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-
-interface Comment {
-  id: string;
-  name?: string;
-  message: string;
-  createdAt: string;
-}
+import { getComments, createComment, CommentItem } from '@/lib/api';
 
 export default function CommentForm() {
   const [name, setName] = useState('');
   const [message, setMessage] = useState('');
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<CommentItem[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('comments');
-      if (raw) setComments(JSON.parse(raw));
-    } catch (e) {
-      // ignore
+    let mounted = true;
+    async function load() {
+      try {
+        setLoading(true);
+        const data = await getComments(50);
+        if (mounted) setComments(data ?? []);
+      } catch (e) {
+        // ignore
+      } finally {
+        if (mounted) setLoading(false);
+      }
     }
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('comments', JSON.stringify(comments));
-    } catch (e) {}
-  }, [comments]);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    const c: Comment = {
-      id: String(Date.now()),
-      name: name.trim() || 'ناشناس',
-      message: message.trim(),
-      createdAt: new Date().toISOString(),
-    };
-
-    setComments((s) => [c, ...s]);
-    setMessage('');
+    try {
+      const created = await createComment({ name: name.trim() || undefined, message: message.trim() });
+      setComments((s) => [created, ...s]);
+      setMessage('');
+      setName('');
+    } catch (err) {
+      console.error('Failed to submit comment', err);
+    }
   };
 
   return (
@@ -83,13 +81,14 @@ export default function CommentForm() {
       <div className="mt-6">
         <h4 className="font-medium text-gray-700 mb-2">نظرات اخیر</h4>
         <div className="space-y-3">
-          {comments.length === 0 && (
+          {loading && <p className="text-sm text-gray-500 italic">در حال بارگذاری...</p>}
+          {!loading && comments.length === 0 && (
             <p className="text-sm text-gray-500 italic">هنوز نظری ثبت نشده است.</p>
           )}
           {comments.map((c) => (
             <div key={c.id} className="border rounded-md p-3 bg-gray-50">
               <div className="flex items-center justify-between mb-2">
-                <div className="text-sm font-medium">{c.name}</div>
+                <div className="text-sm font-medium">{c.name ?? 'ناشناس'}</div>
                 <div className="text-xs text-gray-500">{new Date(c.createdAt).toLocaleString('fa-IR')}</div>
               </div>
               <div className="text-gray-800">{c.message}</div>

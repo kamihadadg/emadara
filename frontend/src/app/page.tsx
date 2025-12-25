@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Survey, SurveyResponse } from '@/types/survey';
-import { getActiveSurveys, getSurveyById, submitSurveyResponse } from '@/lib/api';
+import { getActiveSurveys, getSurveyById, submitSurveyResponse, getCommentCount } from '@/lib/api';
 import SurveyForm from '@/components/SurveyForm';
 import SurveyResults from '@/components/SurveyResults';
 import CommentForm from '@/components/CommentForm';
@@ -18,6 +18,7 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isAdminView, setIsAdminView] = useState(false);
+  const [commentCount, setCommentCount] = useState<number | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -25,6 +26,12 @@ export default function Home() {
         setLoading(true);
         const active = await getActiveSurveys();
         setSurveys(active);
+        try {
+          const cnt = await getCommentCount();
+          setCommentCount(cnt);
+        } catch (e) {
+          setCommentCount(null);
+        }
       } catch (e) {
         setError('خطا در بارگذاری نظرسنجی‌ها');
       } finally {
@@ -110,102 +117,146 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="container">
-        <header className="flex items-center justify-between mb-8">
+
+  <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 py-10">
+    <div className="container max-w-7xl mx-auto px-4">
+
+      {/* ===== Header ===== */}
+      <header className="flex flex-col md:flex-row items-center justify-between mb-10 gap-4">
+        <div className="flex items-center gap-4">
+          <img
+            src="/logo.png"
+            alt="EmadAra Logo"
+            className="h-14 w-auto"
+          />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">پورتال شرکت</h1>
-            <p className="text-sm text-gray-600">نظرسنجی و بازخورد کارکنان</p>
+            <h1 className="text-3xl font-extrabold text-gray-900">
+              پورتال نظرسنجی شرکت عمادآرا
+            </h1>
+            <p className="text-sm text-gray-600 mt-1">
+              سامانه ثبت بازخورد و نظرات کارکنان
+            </p>
+          </div>
+        </div>
+      </header>
+
+      {/* ===== Main Layout ===== */}
+      <main className="grid lg:grid-cols-3 gap-8">
+
+        {/* ===== Message Card ===== */}
+        <section className="lg:col-span-2 bg-white rounded-2xl p-10 shadow-lg border border-gray-100">
+          <h2 className="text-2xl font-bold mb-6 text-gray-900">
+            همکاران گرامی و عزیز،
+          </h2>
+
+          <div className="space-y-5 text-gray-700 text-lg leading-8">
+            <p>
+              موفقیت سازمان ما مرهون تلاش، تعهد و خلاقیت ارزشمند شماست.
+              برای اینکه بتوانیم محیط کاری بهتر، فرآیندهای کارآمدتر و
+              رضایت بیشتری ایجاد کنیم، به شنیدن صدای واقعی شما نیاز داریم؛
+              حتی اگر انتقاد یا پیشنهادی باشد که مطرح‌کردن آن در جلسات
+              عادی دشوار است.
+            </p>
+
+            <p>
+              این صفحه به‌طور ویژه برای شما طراحی شده است تا بتوانید
+              به صورت کاملاً ناشناس و بدون هیچ نگرانی از شناسایی،
+              هر نظر، انتقاد سازنده یا پیشنهاد خلاقانه‌ای را با ما
+              در میان بگذارید.
+            </p>
+
+            <p>
+              تمامی نظرات با دقت و جدیت بررسی می‌شوند و در صورت امکان،
+              اقدامات لازم جهت بهبود شرایط انجام خواهد شد.
+              صدای شما برای ما ارزشمند است و می‌تواند نقش مهمی
+              در ساختن آینده‌ای بهتر برای سازمان داشته باشد.
+            </p>
+
+            <p className="font-medium">
+              از همراهی، صداقت و مشارکت ارزشمند شما صمیمانه سپاسگزاریم.
+            </p>
           </div>
 
-          <nav className="flex items-center gap-3">
-            <button onClick={handleBackToList} className="px-3 py-2 text-sm rounded-md hover:bg-gray-100">خانه</button>
-            <button onClick={() => setViewState('list')} className="px-3 py-2 text-sm rounded-md hover:bg-gray-100">نظرسنجی‌ها</button>
-            <button 
-              onClick={() => selectedSurvey ? handleViewResults(selectedSurvey.id) : null} 
-              disabled={!selectedSurvey} 
-              className={`px-3 py-2 text-sm rounded-md ${selectedSurvey ? 'hover:bg-gray-100' : 'opacity-50 cursor-not-allowed'}`}
+          {/* Divider */}
+          <div className="my-10 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+
+          {/* Signature */}
+          <div className="text-center">
+            <p className="text-lg font-semibold text-gray-900">با احترام</p>
+            <p className="text-lg font-semibold text-gray-900 mt-1">
+              هادی حریری
+            </p>
+            <p className="text-base text-gray-600 mt-1">
+              مدیرعامل شرکت عمادآرا پخش تهران
+            </p>
+          </div>
+        </section>
+
+        {/* ===== Sidebar ===== */}
+        <aside className="lg:col-span-1">
+          <div className="space-y-6 sticky top-6">
+
+            <section className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+              <h3 className="text-lg font-semibold text-gray-900">درباره سامانه</h3>
+              <p className="text-sm text-gray-600 mt-3 leading-6">
+                بازخوردها به‌صورت کاملاً ناشناس ذخیره می‌شوند.
+                هیچ اطلاعات هویتی ثبت نخواهد شد.
+              </p>
+
+              <p className="mt-4 text-sm text-green-600 font-medium">
+                تعداد نظرات ثبت‌شده: {commentCount === null ? '—' : commentCount}
+              </p>
+
+              <p className="text-xs text-gray-500 mt-2 leading-5">
+                نظرات کاربران به صورت عمومی نمایش داده نمی‌شود؛
+                تنها مدیرعامل امکان مشاهده آن‌ها را دارد.
+              </p>
+            </section>
+
+            <section className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+              <CommentForm />
+            </section>
+
+          </div>
+        </aside>
+      </main>
+
+      {/* ===== Other Views ===== */}
+      {viewState === 'survey' && selectedSurvey && (
+        <div className="mt-10">
+          <SurveyForm
+            survey={selectedSurvey}
+            onSubmit={handleSubmitSurvey}
+            isSubmitting={isSubmitting}
+          />
+        </div>
+      )}
+
+      {viewState === 'results' && surveyResults && (
+        <div className="mt-10">
+          <SurveyResults results={surveyResults} />
+        </div>
+      )}
+
+      {viewState === 'success' && (
+        <div className="mt-10">
+          <div className="bg-white rounded-2xl p-10 shadow-lg text-center max-w-xl mx-auto">
+            <div className="text-green-600 text-6xl mb-4">✅</div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+              با تشکر از شما
+            </h2>
+            <p className="text-gray-600 mb-6">
+              نظر شما با موفقیت ثبت شد و با دقت بررسی خواهد شد.
+            </p>
+            <button
+              onClick={handleBackToList}
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition"
             >
-              نتایج
+              بازگشت به صفحه اصلی
             </button>
-            <label className="flex items-center gap-2 text-sm text-gray-600 ml-4">
-              <input type="checkbox" checked={isAdminView} onChange={(e) => setIsAdminView(e.target.checked)} className="w-4 h-4" />
-              نمایش اطلاعات کاربران (Admin)
-            </label>
-          </nav>
-        </header>
-
-        <main className="grid lg:grid-cols-3 gap-8">
-          <section className="lg:col-span-2 bg-white rounded-xl p-8 shadow-md">
-            <h2 className="text-2xl font-bold mb-2">نظرسنجی‌ها</h2>
-            <p className="text-gray-600 mb-6">نظرات و پاسخ‌های خود را ثبت و نتایج را مشاهده کنید.</p>
-
-            <div className="grid gap-6 md:grid-cols-2">
-              {surveys.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <div className="text-gray-400 text-6xl mb-4">📊</div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">نظرسنجی فعالی یافت نشد</h3>
-                  <p className="text-gray-600">در حال حاضر هیچ نظرسنجی فعالی وجود ندارد.</p>
-                </div>
-              ) : (
-                surveys.map((survey) => (
-                  <div key={survey.id} className="bg-gray-50 rounded-lg shadow-sm p-5 hover:shadow-md transition-shadow">
-                    <h3 className="text-lg font-semibold mb-2">{survey.title}</h3>
-                    {survey.description && <p className="text-sm text-gray-600 mb-3">{survey.description}</p>}
-                    <div className="flex gap-2">
-                      <button onClick={() => handleTakeSurvey(survey.id)} className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                        شرکت در نظرسنجی
-                      </button>
-                      <button onClick={() => handleViewResults(survey.id)} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
-                        مشاهده نتایج
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </section>
-
-          <aside className="lg:col-span-1">
-            <div className="space-y-6 sticky top-6">
-              <section className="bg-white rounded-xl shadow-md p-6">
-                <h3 className="text-lg font-semibold">درباره</h3>
-                <p className="text-sm text-gray-600 mt-2">بازخوردها به‌صورت ناشناس ذخیره می‌شوند. می‌توانید نظر خود را در فرم زیر ثبت کنید.</p>
-              </section>
-
-              <section>
-                <CommentForm />
-              </section>
-            </div>
-          </aside>
-        </main>
-
-        {/* render other views */}
-        {viewState === 'survey' && selectedSurvey && (
-          <div className="mt-8">
-            <SurveyForm survey={selectedSurvey} onSubmit={handleSubmitSurvey} isSubmitting={isSubmitting} />
           </div>
-        )}
-
-        {viewState === 'results' && surveyResults && (
-          <div className="mt-8">
-            <SurveyResults results={surveyResults} />
-          </div>
-        )}
-
-        {viewState === 'success' && (
-          <div className="mt-8">
-            <div className="bg-white rounded-xl p-8 shadow-md text-center">
-              <div className="text-green-600 text-6xl mb-4">✅</div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">با تشکر از شما!</h2>
-              <p className="text-gray-600 mb-6">پاسخ‌های شما با موفقیت ثبت شد.</p>
-              <button onClick={handleBackToList} className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                بازگشت به صفحه اصلی
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
-  );
-}
+  </div>
+);}

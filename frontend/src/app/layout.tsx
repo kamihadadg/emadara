@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "پورتال شرکت - نظرسنجی ناشناس",
-  description: "پورتال شرکت با امکان نظرسنجی ناشناس",
+  title: "پورتال نظر سنجی شرکت - نظرسنجی ناشناس",
+  description: "پورتال نظر سنجی شرکت با امکان نظرسنجی ناشناس",
 };
 
 export default function RootLayout({

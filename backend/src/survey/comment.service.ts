@@ -25,4 +25,8 @@ export class CommentService {
       take: limit,
     });
   }
+
+  async countAll(): Promise<number> {
+    return this.commentRepository.count();
+  }
 }
