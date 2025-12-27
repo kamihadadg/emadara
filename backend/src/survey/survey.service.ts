@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Survey } from './entities/survey.entity';
 import { Question } from './entities/question.entity';
 import { Response } from './entities/response.entity';
+import { User } from './entities/user.entity';
 import { CreateSurveyDto } from './dto/create-survey.dto';
 import { SubmitResponseDto } from './dto/submit-response.dto';
 
@@ -16,6 +17,8 @@ export class SurveyService {
     private questionRepository: Repository<Question>,
     @InjectRepository(Response)
     private responseRepository: Repository<Response>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
   ) {}
 
   async createSurvey(createSurveyDto: CreateSurveyDto): Promise<Survey> {
@@ -126,4 +129,31 @@ export class SurveyService {
       totalSubmissions: results[0]?.totalResponses || 0,
     };
   }
+
+  async getOrgChart(): Promise<any[]> {
+    // دریافت همه کاربران با روابط
+    const users = await this.userRepository.find({
+      relations: ['department', 'subordinates', 'manager'],
+      where: { isActive: true }
+    });
+
+    // پیدا کردن کاربران ریشه (بدون مدیر)
+    const rootUsers = users.filter(user => !user.managerId);
+
+    // تبدیل به ساختار درختی
+    const buildTree = (user: User): any => {
+      return {
+        id: user.id,
+        name: `${user.firstName} ${user.lastName}`,
+        title: user.role === 'MANAGER' ? 'مدیر' : 'کارمند',
+        department: 'نامشخص',
+        username: user.username,
+        parentId: user.managerId,
+        children: user.subordinates?.map(sub => buildTree(sub)) || []
+      };
+    };
+
+    return rootUsers.map(user => buildTree(user));
+  }
+
 }

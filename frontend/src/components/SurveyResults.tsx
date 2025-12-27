@@ -1,6 +1,7 @@
 'use client';
 
-import { SurveyResults, QuestionType } from '@/types/survey';
+import type { SurveyResults } from '@/types/survey';
+import { QuestionType } from '@/types/survey';
 
 interface SurveyResultsProps {
   results: SurveyResults;

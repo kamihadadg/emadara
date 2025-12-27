@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,9 +13,12 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// تنظیم زبان پیش‌فرض فارسی
+const defaultLocale = 'fa';
+
 export const metadata: Metadata = {
-  title: "پورتال نظر سنجی شرکت - نظرسنجی ناشناس",
-  description: "پورتال نظر سنجی شرکت با امکان نظرسنجی ناشناس",
+  title: "شرکت صرافی کارآفرین - پلتفرم ارزیابی و مشارکت",
+  description: "پلتفرم هوشمند ارزیابی عملکرد، نظرسنجی‌های سازمانی و صندوق انتقادات و پیشنهادات",
 };
 
 export default function RootLayout({
@@ -27,7 +31,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );

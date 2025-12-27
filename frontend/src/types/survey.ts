@@ -5,6 +5,7 @@ export interface Survey {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  endDate?: string;
   questions: Question[];
 }
 

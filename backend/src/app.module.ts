@@ -5,6 +5,7 @@ import { APP_PIPE } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SurveyModule } from './survey/survey.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -24,8 +25,14 @@ import { SurveyModule } from './survey/survey.module';
         encrypt: false, // Set to true if using Azure SQL
         trustServerCertificate: true,
       },
+      // تنظیمات زبان فارسی برای دیتابیس
+      extra: {
+        charset: 'utf8mb4',
+        collate: 'utf8mb4_persian_ci',
+      },
     }),
     SurveyModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [
