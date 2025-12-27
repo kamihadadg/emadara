@@ -160,9 +160,10 @@ const getLayoutedElements = (nodes: Node[], edges: Edge[], direction = 'TB') => 
 interface InteractiveOrgChartProps {
     data: any[];
     onReorder: (positionId: string, newParentId: string | null) => void;
+    readOnly?: boolean;
 }
 
-function OrgChartContent({ data, onReorder }: InteractiveOrgChartProps) {
+function OrgChartContent({ data, onReorder, readOnly = false }: InteractiveOrgChartProps) {
     const [nodes, setNodes, onNodesChange] = useNodesState([]);
     const [edges, setEdges, onEdgesChange] = useEdgesState([]);
     const [direction, setDirection] = React.useState<'TB' | 'LR' | 'RL'>('TB');
@@ -218,7 +219,7 @@ function OrgChartContent({ data, onReorder }: InteractiveOrgChartProps) {
                 position: { x: item.x || 0, y: item.y || 0 },
                 width: nodeWidth,
                 height: nodeHeight,
-                draggable: true,
+                draggable: !readOnly,
             });
 
             if (item.children) {

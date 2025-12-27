@@ -1,15 +1,20 @@
-import { Controller, Get, Post, Body, Param, Ip, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Ip, Query, Delete } from '@nestjs/common';
 import { SurveyService } from './survey.service';
 import { CreateSurveyDto } from './dto/create-survey.dto';
 import { SubmitResponseDto } from './dto/submit-response.dto';
 
 @Controller('surveys')
 export class SurveyController {
-  constructor(private readonly surveyService: SurveyService) {}
+  constructor(private readonly surveyService: SurveyService) { }
 
   @Post()
   createSurvey(@Body() createSurveyDto: CreateSurveyDto) {
     return this.surveyService.createSurvey(createSurveyDto);
+  }
+
+  @Get()
+  getAllSurveys() {
+    return this.surveyService.getAllSurveys();
   }
 
   @Get('active')
@@ -39,5 +44,10 @@ export class SurveyController {
   ) {
     const include = includeUsers === 'true';
     return this.surveyService.getSurveyResults(id, include);
+  }
+
+  @Delete(':id')
+  deleteSurvey(@Param('id') id: string) {
+    return this.surveyService.deleteSurvey(id);
   }
 }

@@ -22,6 +22,9 @@ export class Survey {
   @Column({ default: true })
   isActive: boolean;
 
+  @Column({ type: 'datetime', nullable: true })
+  endDate: Date;
+
   @CreateDateColumn()
   createdAt: Date;
 

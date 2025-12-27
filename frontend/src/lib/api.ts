@@ -97,6 +97,49 @@ export async function getAllUsers(): Promise<any[]> {
   return response.json();
 }
 
+// Surveys Management
+export async function getAllSurveys(): Promise<Survey[]> {
+  const token = localStorage.getItem('auth_token');
+  const response = await fetch(`${API_BASE_URL}/surveys`, {
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to fetch surveys');
+  }
+  return response.json();
+}
+
+export async function createSurvey(surveyData: any): Promise<Survey> {
+  const token = localStorage.getItem('auth_token');
+  const response = await fetch(`${API_BASE_URL}/surveys`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
+    body: JSON.stringify(surveyData),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to create survey');
+  }
+  return response.json();
+}
+
+export async function deleteSurvey(id: string): Promise<void> {
+  const token = localStorage.getItem('auth_token');
+  const response = await fetch(`${API_BASE_URL}/surveys/${id}`, {
+    method: 'DELETE',
+    headers: {
+      'Authorization': `Bearer ${token}`,
+    },
+  });
+  if (!response.ok) {
+    throw new Error('Failed to delete survey');
+  }
+}
+
 export async function createUser(userData: any): Promise<any> {
   const token = localStorage.getItem('auth_token');
   const response = await fetch(`${API_BASE_URL}/auth/admin/users`, {

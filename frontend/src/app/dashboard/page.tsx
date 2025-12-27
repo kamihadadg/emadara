@@ -165,15 +165,14 @@ function DashboardContent() {
                   <label className="block text-sm font-medium text-gray-500">
                     نقش
                   </label>
-                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                    user.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
-                    user.role === 'MANAGER' ? 'bg-green-100 text-green-800' :
-                    user.role === 'HR' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
+                  <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${user.role === 'ADMIN' ? 'bg-red-100 text-red-800' :
+                      user.role === 'MANAGER' ? 'bg-green-100 text-green-800' :
+                        user.role === 'HR' ? 'bg-blue-100 text-blue-800' :
+                          'bg-gray-100 text-gray-800'
+                    }`}>
                     {user.role === 'EMPLOYEE' ? 'کارمند' :
-                     user.role === 'MANAGER' ? 'مدیر' :
-                     user.role === 'HR' ? 'منابع انسانی' : 'مدیر سیستم'}
+                      user.role === 'MANAGER' ? 'مدیر' :
+                        user.role === 'HR' ? 'منابع انسانی' : 'مدیر سیستم'}
                   </span>
                 </div>
                 <div>
@@ -552,6 +551,16 @@ function DashboardContent() {
                 <span className="text-sm font-medium text-gray-900">تنظیمات</span>
               </Link>
 
+              <Link
+                href="/feedback"
+                className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                <svg className="w-6 h-6 text-pink-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-900">صندوق پیشنهادات</span>
+              </Link>
+
               <button
                 className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
                 onClick={() => window.print()}
@@ -564,7 +573,7 @@ function DashboardContent() {
 
               <button
                 className="flex flex-col items-center p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                onClick={() => {/* Export dashboard data */}}
+                onClick={() => {/* Export dashboard data */ }}
               >
                 <svg className="w-6 h-6 text-indigo-600 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />

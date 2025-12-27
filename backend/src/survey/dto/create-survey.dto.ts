@@ -44,4 +44,8 @@ export class CreateSurveyDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+
+  @IsOptional()
+  @IsString()
+  endDate?: string;
 }

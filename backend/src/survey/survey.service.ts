@@ -19,13 +19,14 @@ export class SurveyService {
     private responseRepository: Repository<Response>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
-  ) {}
+  ) { }
 
   async createSurvey(createSurveyDto: CreateSurveyDto): Promise<Survey> {
     const survey = this.surveyRepository.create({
       title: createSurveyDto.title,
       description: createSurveyDto.description,
       isActive: createSurveyDto.isActive ?? true,
+      endDate: createSurveyDto.endDate ? new Date(createSurveyDto.endDate) : undefined,
       questions: createSurveyDto.questions.map((q, index) =>
         this.questionRepository.create({
           question: q.question,
@@ -48,9 +49,21 @@ export class SurveyService {
     });
   }
 
+  async getAllSurveys(): Promise<Survey[]> {
+    return this.surveyRepository.find({
+      relations: ['questions'],
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async deleteSurvey(id: string): Promise<void> {
+    const survey = await this.getSurveyById(id);
+    await this.surveyRepository.remove(survey);
+  }
+
   async getSurveyById(id: string): Promise<Survey> {
     const survey = await this.surveyRepository.findOne({
-      where: { id, isActive: true },
+      where: { id },
       relations: ['questions'],
       order: { questions: { order: 'ASC' } },
     });
