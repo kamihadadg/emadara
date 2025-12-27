@@ -1,6 +1,6 @@
 import { Survey, SurveyResponse, SurveyResults } from '@/types/survey';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://192.168.1.112:8081';
 
 export async function getActiveSurveys(): Promise<Survey[]> {
   const response = await fetch(`${API_BASE_URL}/surveys/active`);

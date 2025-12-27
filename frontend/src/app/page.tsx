@@ -132,7 +132,7 @@ export default function Home() {
           />
           <div>
             <h1 className="text-3xl font-extrabold text-gray-900">
-              پورتال نظرسنجی شرکت عمادآرا
+               صندوق انتقادات و پیشنهادات شرکت صرافی کارآفرین
             </h1>
             <p className="text-sm text-gray-600 mt-1">
               سامانه ثبت بازخورد و نظرات کارکنان
@@ -191,10 +191,10 @@ export default function Home() {
           <div className="text-center">
             <p className="text-lg font-semibold text-gray-900">با احترام</p>
             <p className="text-lg font-semibold text-gray-900 mt-1">
-              هادی حریری
+              وهب اسکندری
             </p>
             <p className="text-base text-gray-600 mt-1">
-              مدیرعامل شرکت عمادآرا پخش تهران
+              مدیرعامل شرکت صرافی کارآفرین
             </p>
           </div>
         </section>
