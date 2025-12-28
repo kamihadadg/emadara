@@ -27,10 +27,6 @@ export class CreateUserDto {
 
   @IsOptional()
   @IsString()
-  positionId?: string;
-
-  @IsOptional()
-  @IsString()
   profileImageUrl?: string; // URL عکس پروفایل
 
   @IsString()

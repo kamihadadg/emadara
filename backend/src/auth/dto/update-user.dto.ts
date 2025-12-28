@@ -22,10 +22,6 @@ export class UpdateUserDto {
 
   @IsOptional()
   @IsString()
-  positionId?: string;
-
-  @IsOptional()
-  @IsString()
   profileImageUrl?: string; // URL عکس پروفایل
 
   @IsOptional()

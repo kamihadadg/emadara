@@ -6,6 +6,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { SurveyModule } from './survey/survey.module';
 import { AuthModule } from './auth/auth.module';
+import { HrModule } from './hr/hr.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { AuthModule } from './auth/auth.module';
     }),
     SurveyModule,
     AuthModule,
+    HrModule,
   ],
   controllers: [AppController],
   providers: [
@@ -43,4 +45,4 @@ import { AuthModule } from './auth/auth.module';
     },
   ],
 })
-export class AppModule {}
+export class AppModule { }

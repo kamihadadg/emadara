@@ -29,7 +29,7 @@ export class AuthService {
   async login(loginDto: LoginDto): Promise<{ access_token: string; user: any }> {
     const user = await this.userRepository.findOne({
       where: { username: loginDto.username },
-      relations: ['position', 'manager'],
+      relations: ['manager'],
     });
 
     if (!user) {
@@ -64,7 +64,6 @@ export class AuthService {
         firstName: user.firstName,
         lastName: user.lastName,
         role: user.role,
-        position: user.position,
         manager: user.manager,
       },
     };
@@ -101,7 +100,7 @@ export class AuthService {
   async getProfile(userId: string): Promise<any> {
     const user = await this.userRepository.findOne({
       where: { id: userId },
-      relations: ['position', 'manager', 'subordinates'],
+      relations: ['manager', 'subordinates'],
     });
 
     if (!user) {
@@ -115,7 +114,6 @@ export class AuthService {
       firstName: user.firstName,
       lastName: user.lastName,
       role: user.role,
-      position: user.position,
       manager: user.manager,
       subordinates: user.subordinates,
       lastLoginAt: user.lastLoginAt,
@@ -136,35 +134,10 @@ export class AuthService {
       throw new ConflictException('کاربر با این نام کاربری یا کد پرسنلی قبلاً وجود دارد');
     }
 
-    // Auto-assign manager based on position hierarchy
-    let managerId = createUserDto.managerId;
-    if (createUserDto.positionId && !managerId) {
-      // Find the position and its manager
-      const position = await this.positionRepository.findOne({
-        where: { id: createUserDto.positionId },
-        relations: ['employees'],
-      });
-
-      if (position) {
-        // Find the manager of this position (first employee in parent position)
-        if (position.parentPositionId) {
-          const parentPosition = await this.positionRepository.findOne({
-            where: { id: position.parentPositionId },
-            relations: ['employees'],
-          });
-
-          if (parentPosition && parentPosition.employees && parentPosition.employees.length > 0) {
-            // Assign the first employee of the parent position as manager
-            managerId = parentPosition.employees[0].id;
-          }
-        }
-      }
-    }
-
     // Hash password
     const hashedPassword = await bcrypt.hash(createUserDto.password, 12);
 
-    // Create user object with sanitized IDs
+    // Create user object
     const userData: any = {
       employeeId: createUserDto.employeeId,
       username: createUserDto.username,
@@ -172,12 +145,10 @@ export class AuthService {
       lastName: createUserDto.lastName,
       password: hashedPassword,
       role: createUserDto.role,
-      positionId: createUserDto.positionId || null,
-      managerId: managerId || null,
+      managerId: createUserDto.managerId || null,
     };
 
-    // Remove empty strings that might have slipped through
-    if (userData.positionId === '') userData.positionId = null;
+    // Remove empty strings
     if (userData.managerId === '') userData.managerId = null;
 
     const user = this.userRepository.create(userData as DeepPartial<User>);
@@ -187,7 +158,7 @@ export class AuthService {
 
   async getAllUsers(): Promise<User[]> {
     return this.userRepository.find({
-      relations: ['position', 'manager', 'subordinates'],
+      relations: ['manager', 'subordinates'],
       order: { createdAt: 'DESC' },
     });
   }
@@ -195,7 +166,7 @@ export class AuthService {
   async getUserById(id: string): Promise<User> {
     const user = await this.userRepository.findOne({
       where: { id },
-      relations: ['position', 'manager', 'subordinates'],
+      relations: ['manager', 'subordinates'],
     });
 
     if (!user) {
@@ -221,7 +192,6 @@ export class AuthService {
     const updateData: any = { ...updateUserDto };
 
     // Sanitize GUID fields
-    if (updateData.positionId === '') updateData.positionId = null;
     if (updateData.managerId === '') updateData.managerId = null;
 
     await this.userRepository.update(id, updateData);
@@ -257,7 +227,7 @@ export class AuthService {
 
   async getAllPositions(): Promise<Position[]> {
     return this.positionRepository.find({
-      relations: ['parentPosition', 'childPositions', 'employees'],
+      relations: ['parentPosition', 'childPositions'],
       order: { order: 'ASC', title: 'ASC' },
     });
   }
@@ -265,7 +235,7 @@ export class AuthService {
   async getPositionById(id: string): Promise<Position> {
     const position = await this.positionRepository.findOne({
       where: { id },
-      relations: ['childPositions', 'employees'],
+      relations: ['childPositions'],
     });
 
     if (!position) {
@@ -301,18 +271,14 @@ export class AuthService {
   async deletePosition(id: string): Promise<void> {
     const position = await this.getPositionById(id);
 
-    // Check if position has employees
-    if (position.employees && position.employees.length > 0) {
-      throw new BadRequestException('نمی‌توان سمت دارای پرسنل را حذف کرد');
-    }
-
+    // Position can be deleted - employees are managed via assignments
     await this.positionRepository.remove(position);
   }
 
-  // Get organizational chart based on positions and employees
+  // Get organizational chart based on positions and active assignments
   async getOrganizationalChart(): Promise<any[]> {
     const positions = await this.positionRepository.find({
-      relations: ['employees'],
+      relations: ['assignments', 'assignments.contract', 'assignments.contract.user'],
       where: { isActive: true },
       order: { order: 'ASC' },
     });
@@ -332,8 +298,29 @@ export class AuthService {
   private buildOrgChart(positions: Position[]): any[] {
     const positionMap = new Map<string, any>();
 
-    // First pass: Create all position nodes
+    // First pass: Create all position nodes with assignments
     positions.forEach(pos => {
+      // Get active assignments for this position
+      const activeAssignments = (pos.assignments || []).filter(assignment => {
+        // Check if contract is active and assignment is not expired
+        const isContractActive = assignment.contract?.status === 'ACTIVE';
+        const isNotExpired = !assignment.endDate || new Date(assignment.endDate) > new Date();
+        return isContractActive && isNotExpired && assignment.contract?.user;
+      });
+
+      // Map assignments to employee data with workload
+      const employees = activeAssignments.map(assignment => ({
+        id: assignment.contract.user.id,
+        firstName: assignment.contract.user.firstName,
+        lastName: assignment.contract.user.lastName,
+        role: assignment.contract.user.role,
+        employeeId: assignment.contract.user.employeeId,
+        profileImageUrl: assignment.contract.user.profileImageUrl,
+        workloadPercentage: assignment.workloadPercentage,
+        isPrimary: assignment.isPrimary,
+        assignmentId: assignment.id,
+      }));
+
       positionMap.set(pos.id, {
         id: pos.id,
         title: pos.title,
@@ -342,14 +329,7 @@ export class AuthService {
         x: pos.x,
         y: pos.y,
         parentPositionId: pos.parentPositionId,
-        employees: (pos.employees || []).map(emp => ({
-          id: emp.id,
-          firstName: emp.firstName,
-          lastName: emp.lastName,
-          role: emp.role,
-          employeeId: emp.employeeId,
-          profileImageUrl: emp.profileImageUrl,
-        })),
+        employees: employees,
         children: []
       });
     });

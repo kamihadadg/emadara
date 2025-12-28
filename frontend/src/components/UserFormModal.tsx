@@ -31,8 +31,7 @@ export default function UserFormModal({ user, users, positions, onClose, onSave 
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
     password: '',
-    positionId: user?.position?.id || '',
-    managerId: user?.manager?.id || '',
+    managerId: user?.managerId || '',
     role: user?.role || 'EMPLOYEE',
     profileImageUrl: user?.profileImageUrl || '',
   });
@@ -108,7 +107,8 @@ export default function UserFormModal({ user, users, positions, onClose, onSave 
         }
       }
 
-      const submitData = {
+      // Remove positionId from submit data - it's managed via Assignments now
+      const { positionId, ...submitData } = {
         ...formData,
         profileImageUrl,
       };
@@ -254,30 +254,6 @@ export default function UserFormModal({ user, users, positions, onClose, onSave 
                 />
               </div>
             )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 block">سمت سازمانی</label>
-              <div className="relative">
-                <select
-                  value={formData.positionId}
-                  onChange={(e) => handlePositionChange(e.target.value)}
-                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none appearance-none"
-                  required
-                >
-                  <option value="">انتخاب کنید...</option>
-                  {positions.map((pos: any) => (
-                    <option key={pos.id} value={pos.id}>
-                      {pos.title}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </div>
-            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div className="space-y-2">

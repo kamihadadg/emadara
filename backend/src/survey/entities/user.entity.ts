@@ -9,6 +9,7 @@ import {
   JoinColumn,
 } from 'typeorm';
 import { Position } from './position.entity';
+import { Contract } from '../../hr/entities/contract.entity';
 
 export enum UserRole {
   EMPLOYEE = 'EMPLOYEE',
@@ -66,10 +67,6 @@ export class User {
   @UpdateDateColumn()
   updatedAt: Date;
 
-  @ManyToOne(() => Position, { nullable: true })
-  @JoinColumn({ name: 'positionId' })
-  position: Position;
-
 
   @ManyToOne(() => User, { nullable: true })
   @JoinColumn({ name: 'managerId' })
@@ -77,6 +74,9 @@ export class User {
 
   @OneToMany(() => User, 'manager')
   subordinates: User[];
+
+  @OneToMany(() => Contract, (contract) => contract.user)
+  contracts: Contract[];
 
   // Computed properties
   get fullName(): string {

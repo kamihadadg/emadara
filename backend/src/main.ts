@@ -32,7 +32,6 @@ async function bootstrap() {
           username: adminUsername,
           firstName: 'مدیر',
           lastName: 'سیستم',
-          positionId: undefined, // Will be set later by admin
           managerId: undefined,
           role: UserRole.ADMIN,
           password: adminPassword, // AuthService will hash it

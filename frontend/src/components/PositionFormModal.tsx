@@ -135,13 +135,13 @@ export default function PositionFormModal({ position, positions, onClose, onSave
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-700 block">توضیحات تکمیلی (اختیاری)</label>
+              <label className="text-sm font-bold text-gray-700 block">شرح وظایف سازمانی (Job Description)</label>
               <textarea
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none resize-none"
-                rows={3}
-                placeholder="شرح وظایف و مسئولیت‌های این جایگاه..."
+                rows={6}
+                placeholder="شرح کامل وظایف، مسئولیت‌ها و انتظارات این جایگاه..."
               />
             </div>
 

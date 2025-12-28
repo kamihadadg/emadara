@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { User } from './user.entity';
+import { Assignment } from '../../hr/entities/assignment.entity';
 
 
 @Entity('positions')
@@ -56,8 +56,8 @@ export class Position {
   @OneToMany(() => Position, 'parentPosition')
   childPositions: Position[];
 
-  @OneToMany(() => User, 'position')
-  employees: User[];
+  @OneToMany(() => Assignment, (assignment) => assignment.position)
+  assignments: Assignment[];
 
   // Computed property for hierarchy level
   get hierarchyLevel(): number {

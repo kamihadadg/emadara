@@ -14,12 +14,19 @@ import {
   getAllPositionsFlat,
   updatePositionParent,
   getAllSurveys,
-  deleteSurvey
+  deleteSurvey,
+  getAllContracts,
+  getAllAssignments,
+  updateContractStatus,
+  deleteContract,
+  deleteAssignment
 } from '@/lib/api';
 import UserFormModal from '@/components/UserFormModal';
 import PositionFormModal from '@/components/PositionFormModal';
 import InteractiveOrgChart from '@/components/InteractiveOrgChart';
 import SurveyFormModal from '@/components/SurveyFormModal';
+import ContractFormModal from '@/components/ContractFormModal';
+import AssignmentFormModal from '@/components/AssignmentFormModal';
 import { Survey } from '@/types/survey';
 
 interface User {
@@ -44,7 +51,7 @@ interface User {
 
 export default function AdminPage() {
   const { user, logout } = useAuth();
-  const [activeTab, setActiveTab] = useState<'users' | 'positions' | 'org-chart' | 'surveys'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'positions' | 'org-chart' | 'surveys' | 'contracts'>('users');
   const [users, setUsers] = useState<User[]>([]);
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [positions, setPositions] = useState<any[]>([]);
@@ -56,6 +63,29 @@ export default function AdminPage() {
   const [showSurveyForm, setShowSurveyForm] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingPosition, setEditingPosition] = useState<any | null>(null);
+
+  // HR State
+  const [contracts, setContracts] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [showContractForm, setShowContractForm] = useState(false);
+  const [showAssignmentForm, setShowAssignmentForm] = useState(false);
+  const [editingContract, setEditingContract] = useState<any | null>(null);
+  const [editingAssignment, setEditingAssignment] = useState<any | null>(null);
+
+  // Search & Pagination for ALL sections
+  const [userSearch, setUserSearch] = useState('');
+  const [positionSearch, setPositionSearch] = useState('');
+  const [surveySearch, setSurveySearch] = useState('');
+  const [contractSearch, setContractSearch] = useState('');
+  const [assignmentSearch, setAssignmentSearch] = useState('');
+
+  const [userPage, setUserPage] = useState(1);
+  const [positionPage, setPositionPage] = useState(1);
+  const [surveyPage, setSurveyPage] = useState(1);
+  const [contractPage, setContractPage] = useState(1);
+  const [assignmentPage, setAssignmentPage] = useState(1);
+
+  const itemsPerPage = 10;
 
   // Check if user is admin
   if (!user || user.role !== 'ADMIN') {
@@ -87,18 +117,22 @@ export default function AdminPage() {
   const loadData = async (silent = false) => {
     try {
       if (!silent) setLoading(true);
-      const [usersData, positionsData, orgChartData, flatPositionsData, surveysData] = await Promise.all([
+      const [usersData, positionsData, orgChartData, flatPositionsData, surveysData, contractsData, assignmentsData] = await Promise.all([
         getAllUsers(),
         getAllPositions(),
         getOrganizationalChart(),
         getAllPositionsFlat(),
         getAllSurveys(),
+        getAllContracts(),
+        getAllAssignments(),
       ]);
       setUsers(usersData);
       setPositions(positionsData);
       setOrgChart(orgChartData);
       setFlatPositions(flatPositionsData);
       setSurveys(surveysData || []);
+      setContracts(contractsData || []);
+      setAssignments(assignmentsData || []);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {
@@ -256,6 +290,15 @@ export default function AdminPage() {
                   }`}
               >
                 مدیریت نظرسنجی‌ها ({surveys.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('contracts')}
+                className={`py-2 px-1 border-b-2 font-medium text-sm ${activeTab === 'contracts'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+              >
+                قراردادها و احکام
               </button>
             </nav>
           </div>
@@ -701,7 +744,516 @@ export default function AdminPage() {
             onSave={() => loadData(true)}
           />
         )}
+        {/* Contracts Tab */}
+        {activeTab === 'contracts' && (
+          <div className="space-y-6">
+            {/* Contracts Section */}
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900">
+                      لیست قراردادها
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">مدیریت قراردادهای کاری پرسنل</p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setEditingContract(null);
+                      setShowContractForm(true);
+                    }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <span className="text-xl font-bold">+</span>
+                    قرارداد جدید
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="mb-4">
+                  <input
+                    type="text"
+                    placeholder="جستجو بر اساس نام کارمند..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={contractSearch}
+                    onChange={(e) => {
+                      setContractSearch(e.target.value);
+                      setContractPage(1);
+                    }}
+                  />
+                </div>
+
+                <div className="overflow-hidden border border-gray-100 rounded-2xl">
+                  <table className="min-w-full divide-y divide-gray-100">
+                    <thead className="bg-[#f8fafc]">
+                      <tr>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">کارمند</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">نوع</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">تاریخ شروع</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">تاریخ پایان</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">وضعیت</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-50">
+                      {contracts
+                        .filter(c => {
+                          const searchLower = contractSearch.toLowerCase();
+                          return (c.user?.firstName?.toLowerCase().includes(searchLower) ||
+                            c.user?.lastName?.toLowerCase().includes(searchLower) ||
+                            c.user?.employeeId?.toLowerCase().includes(searchLower));
+                        })
+                        .slice((contractPage - 1) * itemsPerPage, contractPage * itemsPerPage)
+                        .map((contract) => (
+                          <tr key={contract.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div className="text-sm font-bold text-gray-900">{contract.user?.firstName} {contract.user?.lastName}</div>
+                              <div className="text-xs text-gray-500">{contract.user?.employeeId}</div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {contract.contractType === 'FULL_TIME' ? 'تمام وقت' :
+                                contract.contractType === 'PART_TIME' ? 'پاره وقت' :
+                                  contract.contractType === 'CONTRACTOR' ? 'پیمانی' : 'ساعتی'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {new Date(contract.startDate).toLocaleDateString('fa-IR')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                              {contract.endDate ? new Date(contract.endDate).toLocaleDateString('fa-IR') : '-'}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <span className={`px-2 py-1 text-xs font-bold rounded-md ${contract.status === 'ACTIVE' ? 'bg-green-50 text-green-700 border border-green-100' :
+                                contract.status === 'DRAFT' ? 'bg-gray-50 text-gray-700 border border-gray-100' :
+                                  contract.status === 'SUSPENDED' ? 'bg-orange-50 text-orange-700 border border-orange-100' :
+                                    'bg-red-50 text-red-700 border border-red-100'
+                                }`}>
+                                {contract.status === 'ACTIVE' ? 'فعال' :
+                                  contract.status === 'DRAFT' ? 'پیش‌نویس' :
+                                    contract.status === 'SUSPENDED' ? 'معلق' :
+                                      contract.status === 'TERMINATED' ? 'خاتمه یافته' : 'منقضی شده'}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => {
+                                    setEditingContract(contract);
+                                    setShowContractForm(true);
+                                  }}
+                                  className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs"
+                                  title="ویرایش"
+                                >
+                                  ویرایش
+                                </button>
+                                {contract.status === 'DRAFT' && (
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('آیا از فعال‌سازی این قرارداد اطمینان دارید؟')) {
+                                        await updateContractStatus(contract.id, 'ACTIVE');
+                                        loadData(true);
+                                      }
+                                    }}
+                                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2 py-1 rounded text-xs"
+                                  >
+                                    فعال‌سازی
+                                  </button>
+                                )}
+                                {contract.status === 'ACTIVE' && (
+                                  <>
+                                    <button
+                                      onClick={async () => {
+                                        if (confirm('آیا از تعلیق این قرارداد اطمینان دارید؟')) {
+                                          await updateContractStatus(contract.id, 'SUSPENDED');
+                                          loadData(true);
+                                        }
+                                      }}
+                                      className="text-orange-600 hover:text-orange-900 bg-orange-50 hover:bg-orange-100 px-2 py-1 rounded text-xs"
+                                    >
+                                      تعلیق
+                                    </button>
+                                    <button
+                                      onClick={async () => {
+                                        if (confirm('آیا از خاتمه این قرارداد اطمینان دارید؟')) {
+                                          await updateContractStatus(contract.id, 'TERMINATED');
+                                          loadData(true);
+                                        }
+                                      }}
+                                      className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
+                                    >
+                                      خاتمه
+                                    </button>
+                                  </>
+                                )}
+                                {contract.status === 'SUSPENDED' && (
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('آیا از فعال‌سازی مجدد این قرارداد اطمینان دارید؟')) {
+                                        await updateContractStatus(contract.id, 'ACTIVE');
+                                        loadData(true);
+                                      }
+                                    }}
+                                    className="text-green-600 hover:text-green-900 bg-green-50 hover:bg-green-100 px-2 py-1 rounded text-xs"
+                                  >
+                                    فعال‌سازی مجدد
+                                  </button>
+                                )}
+                                {contract.status === 'DRAFT' && (
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('آیا از حذف این قرارداد اطمینان دارید؟')) {
+                                        await deleteContract(contract.id);
+                                        loadData(true);
+                                      }
+                                    }}
+                                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
+                                  >
+                                    حذف
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      {contracts.filter(c => {
+                        const searchLower = contractSearch.toLowerCase();
+                        return (c.user?.firstName?.toLowerCase().includes(searchLower) ||
+                          c.user?.lastName?.toLowerCase().includes(searchLower) ||
+                          c.user?.employeeId?.toLowerCase().includes(searchLower));
+                      }).length === 0 && (
+                          <tr>
+                            <td colSpan={6} className="px-6 py-10 text-center text-gray-500 bg-gray-50">
+                              {contractSearch ? 'نتیجه‌ای یافت نشد.' : 'هیچ قراردادی ثبت نشده است.'}
+                            </td>
+                          </tr>
+                        )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {Math.ceil(contracts.filter(c => {
+                  const searchLower = contractSearch.toLowerCase();
+                  return (c.user?.firstName?.toLowerCase().includes(searchLower) ||
+                    c.user?.lastName?.toLowerCase().includes(searchLower) ||
+                    c.user?.employeeId?.toLowerCase().includes(searchLower));
+                }).length / itemsPerPage) > 1 && (
+                    <div className="flex justify-center items-center gap-2 mt-4">
+                      <button
+                        onClick={() => setContractPage(p => Math.max(1, p - 1))}
+                        disabled={contractPage === 1}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                      >
+                        قبلی
+                      </button>
+                      <span className="text-sm text-gray-600">
+                        صفحه {contractPage} از {Math.ceil(contracts.filter(c => {
+                          const searchLower = contractSearch.toLowerCase();
+                          return (c.user?.firstName?.toLowerCase().includes(searchLower) ||
+                            c.user?.lastName?.toLowerCase().includes(searchLower) ||
+                            c.user?.employeeId?.toLowerCase().includes(searchLower));
+                        }).length / itemsPerPage)}
+                      </span>
+                      <button
+                        onClick={() => setContractPage(p => p + 1)}
+                        disabled={contractPage >= Math.ceil(contracts.filter(c => {
+                          const searchLower = contractSearch.toLowerCase();
+                          return (c.user?.firstName?.toLowerCase().includes(searchLower) ||
+                            c.user?.lastName?.toLowerCase().includes(searchLower) ||
+                            c.user?.employeeId?.toLowerCase().includes(searchLower));
+                        }).length / itemsPerPage)}
+                        className="px-3 py-1 border rounded disabled:opacity-50"
+                      >
+                        بعدی
+                      </button>
+                    </div>
+                  )}
+              </div>
+            </div>
+
+            {/* Users Tab */}
+            {activeTab === 'users' && (
+              <div className="bg-white shadow rounded-lg">
+                <div className="px-4 py-5 sm:p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <div>
+                      <h3 className="text-lg font-medium text-gray-900">مدیریت کاربران</h3>
+                      <p className="text-sm text-gray-500 mt-1">لیست کاربران و پرسنل سازمان</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditingUser(null);
+                        setShowUserForm(true);
+                      }}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+                    >
+                      <span className="text-xl font-bold">+</span>
+                      افزودن کاربر جدید
+                    </button>
+                  </div>
+
+                  {/* Search */}
+                  <div className="mb-4">
+                    <input
+                      type="text"
+                      placeholder="جستجو بر اساس نام، نام خانوادگی یا کد پرسنلی..."
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      value={userSearch}
+                      onChange={(e) => {
+                        setUserSearch(e.target.value);
+                        setUserPage(1);
+                      }}
+                    />
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">کاربر</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">کد پرسنلی</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">نقش</th>
+                          <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">عملیات</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {users
+                          .filter(u => {
+                            const searchLower = userSearch.toLowerCase();
+                            return (u.firstName?.toLowerCase().includes(searchLower) ||
+                              u.lastName?.toLowerCase().includes(searchLower) ||
+                              u.employeeId?.toLowerCase().includes(searchLower) ||
+                              u.username?.toLowerCase().includes(searchLower));
+                          })
+                          .slice((userPage - 1) * itemsPerPage, userPage * itemsPerPage)
+                          .map((u) => (
+                            <tr key={u.id} className="hover:bg-slate-50 transition-colors">
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm font-bold text-gray-900">{u.firstName} {u.lastName}</div>
+                                <div className="text-xs text-gray-500">{u.username}</div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{u.employeeId || '-'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{u.role === 'ADMIN' ? 'مدیر' : u.role === 'HR' ? 'منابع انسانی' : u.role === 'MANAGER' ? 'مدیر' : 'کارمند'}</td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => {
+                                      setEditingUser(u);
+                                      setShowUserForm(true);
+                                    }}
+                                    className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs"
+                                    title="ویرایش"
+                                  >
+                                    ویرایش
+                                  </button>
+                                  <button
+                                    onClick={async () => {
+                                      if (confirm('آیا از حذف این کاربر اطمینان دارید؟')) {
+                                        await deleteUser(u.id);
+                                        loadData(true);
+                                      }
+                                    }}
+                                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
+                                  >
+                                    حذف
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        {users.filter(u => {
+                          const searchLower = userSearch.toLowerCase();
+                          return (u.firstName?.toLowerCase().includes(searchLower) ||
+                            u.lastName?.toLowerCase().includes(searchLower) ||
+                            u.employeeId?.toLowerCase().includes(searchLower) ||
+                            u.username?.toLowerCase().includes(searchLower));
+                        }).length === 0 && (
+                            <tr>
+                              <td colSpan={4} className="px-6 py-10 text-center text-gray-500 bg-gray-50">
+                                {userSearch ? 'نتیجه‌ای یافت نشد.' : 'هیچ کاربری ثبت نشده است.'}
+                              </td>
+                            </tr>
+                          )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Pagination */}
+                  {Math.ceil(users.filter(u => {
+                    const searchLower = userSearch.toLowerCase();
+                    return (u.firstName?.toLowerCase().includes(searchLower) ||
+                      u.lastName?.toLowerCase().includes(searchLower) ||
+                      u.employeeId?.toLowerCase().includes(searchLower) ||
+                      u.username?.toLowerCase().includes(searchLower));
+                  }).length / itemsPerPage) > 1 && (
+                      <div className="flex justify-center items-center gap-2 mt-4">
+                        <button
+                          onClick={() => setUserPage(p => Math.max(1, p - 1))}
+                          disabled={userPage === 1}
+                          className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                          قبلی
+                        </button>
+                        <span className="text-sm text-gray-600">
+                          صفحه {userPage} از {Math.ceil(users.filter(u => {
+                            const searchLower = userSearch.toLowerCase();
+                            return (u.firstName?.toLowerCase().includes(searchLower) ||
+                              u.lastName?.toLowerCase().includes(searchLower) ||
+                              u.employeeId?.toLowerCase().includes(searchLower) ||
+                              u.username?.toLowerCase().includes(searchLower));
+                          }).length / itemsPerPage)}
+                        </span>
+                        <button
+                          onClick={() => setUserPage(p => p + 1)}
+                          disabled={userPage >= Math.ceil(users.filter(u => {
+                            const searchLower = userSearch.toLowerCase();
+                            return (u.firstName?.toLowerCase().includes(searchLower) ||
+                              u.lastName?.toLowerCase().includes(searchLower) ||
+                              u.employeeId?.toLowerCase().includes(searchLower) ||
+                              u.username?.toLowerCase().includes(searchLower));
+                          }).length / itemsPerPage)}
+                          className="px-3 py-1 border rounded disabled:opacity-50"
+                        >
+                          بعدی
+                        </button>
+                      </div>
+                    )}
+                </div>
+              </div>
+            )}
+
+            {/* Assignments Section */}
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    لیست انتساب‌های شغلی (احکام)
+                  </h3>
+                  <button
+                    onClick={() => {
+                      setEditingAssignment(null);
+                      setShowAssignmentForm(true);
+                    }}
+                    className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center gap-2"
+                  >
+                    <span className="text-xl font-bold">+</span>
+                    انتساب شغل جدید
+                  </button>
+                </div>
+
+                <div className="overflow-hidden border border-gray-100 rounded-2xl">
+                  <table className="min-w-full divide-y divide-gray-100">
+                    <thead className="bg-[#f8fafc]">
+                      <tr>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">قرارداد</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">سمت</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">تاریخ شروع</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">درصد کار</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">وضعیت</th>
+                        <th className="px-6 py-4 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">عملیات</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-50">
+                      {assignments.map((assignment) => (
+                        <tr key={assignment.id} className="hover:bg-slate-50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-bold text-gray-900">
+                              {assignment.contract?.user?.firstName} {assignment.contract?.user?.lastName}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              قرارداد: {new Date(assignment.contract?.startDate).toLocaleDateString('fa-IR')}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {assignment.position?.title}
+                            {assignment.isPrimary && <span className="mr-2 text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100">اصلی</span>}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {new Date(assignment.startDate).toLocaleDateString('fa-IR')}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              <span className="text-sm font-bold text-gray-700 ml-2">{assignment.workloadPercentage}%</span>
+                              <div className="w-20 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div className="h-full bg-blue-500" style={{ width: `${assignment.workloadPercentage}%` }}></div>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {/* Simple logic for status based on dates */}
+                            {(!assignment.endDate || new Date(assignment.endDate) > new Date()) ?
+                              <span className="text-xs font-bold text-green-600">فعال</span> :
+                              <span className="text-xs font-bold text-gray-400">پایان یافته</span>
+                            }
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => {
+                                  setEditingAssignment(assignment);
+                                  setShowAssignmentForm(true);
+                                }}
+                                className="text-blue-600 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded text-xs"
+                                title="ویرایش"
+                              >
+                                ویرایش
+                              </button>
+                              <button
+                                onClick={async () => {
+                                  if (confirm('آیا از حذف این حکم اطمینان دارید؟')) {
+                                    await deleteAssignment(assignment.id);
+                                    loadData(true);
+                                  }
+                                }}
+                                className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 px-2 py-1 rounded text-xs"
+                              >
+                                حذف
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {assignments.length === 0 && (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-10 text-center text-gray-500 bg-gray-50">
+                            هیچ انتساب شغلی ثبت نشده است.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
+
+      {/* Modals */}
+      {showContractForm && (
+        <ContractFormModal
+          onClose={() => {
+            setShowContractForm(false);
+            setEditingContract(null);
+          }}
+          onSave={() => loadData(true)}
+          users={users}
+          contract={editingContract}
+        />
+      )}
+
+      {showAssignmentForm && (
+        <AssignmentFormModal
+          onClose={() => {
+            setShowAssignmentForm(false);
+            setEditingAssignment(null);
+          }}
+          onSave={() => loadData(true)}
+          contracts={contracts}
+          positions={positions}
+          assignment={editingAssignment}
+        />
+      )}
     </div>
   );
 }

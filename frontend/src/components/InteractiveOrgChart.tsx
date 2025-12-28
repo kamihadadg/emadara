@@ -53,6 +53,12 @@ const OrgNode = ({ data }: any) => {
                                             {emp.firstName[0]}
                                         </div>
                                     )}
+                                    {/* Workload badge */}
+                                    {emp.workloadPercentage && emp.workloadPercentage < 100 && (
+                                        <div className="absolute -bottom-1 -right-1 bg-amber-500 text-white text-[8px] font-black px-1 rounded-full border border-white">
+                                            {emp.workloadPercentage}%
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                             {employeeCount > 3 && (
@@ -75,17 +81,31 @@ const OrgNode = ({ data }: any) => {
                 ) : (
                     mainEmployee ? (
                         <div className="flex flex-col items-center">
-                            {mainEmployee.profileImageUrl ? (
-                                <img
-                                    src={getFullImageUrl(mainEmployee.profileImageUrl) || ''}
-                                    alt={mainEmployee.firstName}
-                                    className="w-11 h-11 rounded-full border-2 border-white shadow-md object-cover mb-1"
-                                />
-                            ) : (
-                                <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-md border-2 border-white mb-1">
-                                    {mainEmployee.firstName[0]}
-                                </div>
-                            )}
+                            <div className="relative">
+                                {mainEmployee.profileImageUrl ? (
+                                    <img
+                                        src={getFullImageUrl(mainEmployee.profileImageUrl) || ''}
+                                        alt={mainEmployee.firstName}
+                                        className="w-11 h-11 rounded-full border-2 border-white shadow-md object-cover mb-1"
+                                    />
+                                ) : (
+                                    <div className="w-11 h-11 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-md border-2 border-white mb-1">
+                                        {mainEmployee.firstName[0]}
+                                    </div>
+                                )}
+                                {/* Workload percentage badge */}
+                                {mainEmployee.workloadPercentage && mainEmployee.workloadPercentage < 100 && (
+                                    <div className="absolute -bottom-0 -right-0 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded-full border-2 border-white shadow-md">
+                                        {mainEmployee.workloadPercentage}%
+                                    </div>
+                                )}
+                                {/* Primary badge */}
+                                {mainEmployee.isPrimary && (
+                                    <div className="absolute -top-1 -left-1 bg-gradient-to-r from-green-500 to-emerald-500 text-white text-[8px] font-black px-1 py-0.5 rounded-full border-2 border-white shadow-md">
+                                        ★
+                                    </div>
+                                )}
+                            </div>
                             <div className="text-[11px] font-bold text-gray-800 text-center">
                                 {mainEmployee.firstName} {mainEmployee.lastName}
                             </div>
@@ -458,8 +478,8 @@ function OrgChartContent({ data, onReorder, readOnly = false }: InteractiveOrgCh
                                         <div className="text-sm font-black text-gray-800">{selectedEmployeeInAggregate.employeeId}</div>
                                     </div>
                                     <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:shadow-md">
-                                        <div className="text-[10px] text-gray-400 font-bold mb-1">واحد</div>
-                                        <div className="text-sm font-black text-gray-800">مرکزی</div>
+                                        <div className="text-[10px] text-gray-400 font-bold mb-1">درصد اشتغال</div>
+                                        <div className="text-sm font-black text-gray-800">{selectedEmployeeInAggregate.workloadPercentage || 100}%</div>
                                     </div>
                                 </div>
 
@@ -499,8 +519,8 @@ function OrgChartContent({ data, onReorder, readOnly = false }: InteractiveOrgCh
                                             <div className="text-sm font-black text-gray-800">{selectedNodeData.mainEmployee.employeeId}</div>
                                         </div>
                                         <div className="bg-gray-50 p-3 rounded-2xl border border-gray-100 shadow-sm transition-hover hover:shadow-md">
-                                            <div className="text-[10px] text-gray-400 font-bold mb-1">واحد</div>
-                                            <div className="text-sm font-black text-gray-800">مرکزی</div>
+                                            <div className="text-[10px] text-gray-400 font-bold mb-1">درصد اشتغال</div>
+                                            <div className="text-sm font-black text-gray-800">{selectedNodeData.mainEmployee.workloadPercentage || 100}%</div>
                                         </div>
                                     </div>
                                 )}
@@ -541,7 +561,19 @@ function OrgChartContent({ data, onReorder, readOnly = false }: InteractiveOrgCh
                                                 )}
                                                 <div className="mr-3 flex-1">
                                                     <div className="text-sm font-black text-gray-800 group-hover:text-blue-600 transition-colors uppercase">{emp.firstName} {emp.lastName}</div>
-                                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{emp.employeeId}</div>
+                                                    <div className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter flex items-center gap-2">
+                                                        <span>{emp.employeeId}</span>
+                                                        {emp.workloadPercentage && emp.workloadPercentage < 100 && (
+                                                            <span className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full text-[9px] font-black">
+                                                                {emp.workloadPercentage}%
+                                                            </span>
+                                                        )}
+                                                        {emp.isPrimary && (
+                                                            <span className="bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full text-[9px] font-black">
+                                                                اصلی
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </div>
                                                 <svg className="w-4 h-4 text-gray-300 group-hover:translate-x-[-4px] group-hover:text-blue-400 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
